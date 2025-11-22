@@ -38,7 +38,8 @@ export const translations = {
     settings: {
       audio: "声场",
       theme: "材质",
-      lang: "语言"
+      lang: "语言",
+      repair: "重构"
     }
   },
   en: {
@@ -79,7 +80,8 @@ export const translations = {
     settings: {
       audio: "AUDIO",
       theme: "MAT",
-      lang: "LANG"
+      lang: "LANG",
+      repair: "REPAIR"
     }
   }
 };

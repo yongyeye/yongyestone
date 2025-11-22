@@ -1,3 +1,4 @@
+
 class AudioEngine {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
@@ -192,6 +193,102 @@ class AudioEngine {
     modulator.start(t);
     carrier.stop(t + 0.3);
     modulator.stop(t + 0.3);
+  }
+
+  public playFracture() {
+      this.resume();
+      if (this.isMuted || !this.ctx || !this.masterGain) return;
+      const t = this.ctx.currentTime;
+
+      // 1. The Snap (Noise burst)
+      const noiseBufferSize = this.ctx.sampleRate * 0.5;
+      const buffer = this.ctx.createBuffer(1, noiseBufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < noiseBufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      const noiseFilter = this.ctx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.value = 1000;
+      const noiseGain = this.ctx.createGain();
+      
+      noiseGain.gain.setValueAtTime(0.8, t);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(this.masterGain);
+      noise.start(t);
+
+      // 2. The Tearing (Sawtooth slide)
+      const tear = this.ctx.createOscillator();
+      tear.type = 'sawtooth';
+      tear.frequency.setValueAtTime(800, t);
+      tear.frequency.exponentialRampToValueAtTime(50, t + 0.4);
+      
+      const tearGain = this.ctx.createGain();
+      tearGain.gain.setValueAtTime(0.3, t);
+      tearGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
+      tear.connect(tearGain);
+      tearGain.connect(this.masterGain);
+      tear.start(t);
+  }
+
+  public playRain() {
+      this.resume();
+      if (this.isMuted || !this.ctx || !this.masterGain) return;
+      const t = this.ctx.currentTime;
+      
+      // Multiple drips
+      for(let i=0; i<3; i++) {
+          const offset = i * 0.08 + Math.random() * 0.05;
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(200, t + offset); // Low thud
+          osc.frequency.exponentialRampToValueAtTime(50, t + offset + 0.1);
+          
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0, t + offset);
+          gain.gain.linearRampToValueAtTime(0.4, t + offset + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.2);
+
+          // Lowpass to make it "heavy/liquid"
+          const lp = this.ctx.createBiquadFilter();
+          lp.type = 'lowpass';
+          lp.frequency.value = 400;
+
+          osc.connect(lp);
+          lp.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(t + offset);
+          osc.stop(t + offset + 0.3);
+      }
+  }
+
+  public playRepair() {
+      this.resume();
+      if (this.isMuted || !this.ctx || !this.masterGain) return;
+      const t = this.ctx.currentTime;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      // Rising swelling tone (Reversed sound feeling)
+      osc.frequency.setValueAtTime(100, t);
+      osc.frequency.exponentialRampToValueAtTime(800, t + 2.0);
+      
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.2, t + 1.5);
+      gain.gain.linearRampToValueAtTime(0, t + 2.0);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(t);
+      osc.stop(t + 2.0);
   }
 }
 

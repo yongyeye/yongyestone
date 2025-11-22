@@ -31,7 +31,6 @@ const PageTransition: React.FC<Props> = ({ isActive, type, onMidpoint, onComplet
     if (type === 'fracture') {
         // Generate a random crack path
         const startX = Math.random() * canvas.width;
-        const endX = Math.random() * canvas.width;
         const points = [];
         let currX = startX;
         let currY = 0;
@@ -47,16 +46,19 @@ const PageTransition: React.FC<Props> = ({ isActive, type, onMidpoint, onComplet
         particles = points;
     } else if (type === 'rain') {
         // Initialize rain drops
-        for(let i=0; i<15; i++) {
+        // Limit to 2-3 drops for minimal impact
+        const dropCount = 2 + Math.floor(Math.random() * 2); 
+        
+        for(let i=0; i<dropCount; i++) {
             particles.push({
                 x: Math.random() * canvas.width,
                 y: -Math.random() * 500,
-                speed: 15 + Math.random() * 20,
-                size: 2 + Math.random() * 3,
-                splatY: Math.random() * canvas.height * 0.8 + canvas.height * 0.1,
+                speed: 20 + Math.random() * 25, // Faster
+                size: 3 + Math.random() * 3, // Slightly larger
+                splatY: Math.random() * canvas.height * 0.6 + canvas.height * 0.2, // Central area
                 state: 'falling', // falling, splatting
                 splatRadius: 0,
-                maxSplat: 50 + Math.random() * 100
+                maxSplat: 100 + Math.random() * 150 // Larger impact
             });
         }
     }
@@ -95,8 +97,8 @@ const PageTransition: React.FC<Props> = ({ isActive, type, onMidpoint, onComplet
             ctx.beginPath();
             ctx.strokeStyle = 'rgba(220, 38, 38, 0.9)'; // Red
             ctx.lineWidth = 3 + Math.random() * 2;
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = 'rgba(255, 200, 200, 0.8)';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = 'rgba(255, 150, 150, 0.6)';
             
             const drawCount = Math.floor(particles.length * progress);
             
@@ -110,7 +112,7 @@ const PageTransition: React.FC<Props> = ({ isActive, type, onMidpoint, onComplet
 
             // Flash screen
             if (elapsed < 100) {
-                ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * (1 - elapsed/100)})`;
+                ctx.fillStyle = `rgba(255, 255, 255, ${0.2 * (1 - elapsed/100)})`;
                 ctx.fillRect(0,0, canvas.width, canvas.height);
             }
 
@@ -131,7 +133,8 @@ const PageTransition: React.FC<Props> = ({ isActive, type, onMidpoint, onComplet
                 p.y += p.speed;
                 ctx.fillStyle = '#7f1d1d'; // Deep red
                 ctx.beginPath();
-                ctx.rect(p.x, p.y, p.size, p.size * 4);
+                // Elongated drop
+                ctx.ellipse(p.x, p.y, p.size, p.size * 6, 0, 0, Math.PI * 2);
                 ctx.fill();
 
                 if (p.y >= p.splatY) {
@@ -139,20 +142,23 @@ const PageTransition: React.FC<Props> = ({ isActive, type, onMidpoint, onComplet
                 }
             } else if (p.state === 'splatting') {
                 // Expand splat
-                p.splatRadius += (p.maxSplat - p.splatRadius) * 0.1;
+                p.splatRadius += (p.maxSplat - p.splatRadius) * 0.08;
                 
-                ctx.fillStyle = 'rgba(127, 29, 29, 0.8)'; // Blood color
+                ctx.fillStyle = 'rgba(127, 29, 29, 0.9)'; // Blood color
                 ctx.beginPath();
+                // Irregular splat shape (circle for now, but jagged edges simulated via shadow/blur could work, keeping simple for perf)
                 ctx.arc(p.x, p.splatY, p.splatRadius, 0, Math.PI * 2);
                 ctx.fill();
                 
                 // Drips from splat
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.splatY);
-                ctx.lineTo(p.x, p.splatY + p.splatRadius * 1.5);
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = 'rgba(127, 29, 29, 0.6)';
-                ctx.stroke();
+                if (p.splatRadius > 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.splatY);
+                    ctx.lineTo(p.x, p.splatY + p.splatRadius * 2);
+                    ctx.lineWidth = p.size;
+                    ctx.strokeStyle = 'rgba(127, 29, 29, 0.7)';
+                    ctx.stroke();
+                }
             }
         });
         ctx.restore();
