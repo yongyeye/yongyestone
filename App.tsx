@@ -83,15 +83,15 @@ const App: React.FC = () => {
                     <h4 className="font-mono text-xs mb-6 text-stone-500 tracking-widest">SYSTEM ARCHIVE</h4>
                     <ul className="space-y-4 font-mono text-xs text-stone-600">
                       <li className="flex items-center gap-2">
-                        <span className="text-red-900">>>></span> 
+                        <span className="text-red-900">{">>>"}</span> 
                         <span>Sequence 01: Initialization complete.</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <span className="text-red-900">>>></span>
+                        <span className="text-red-900">{">>>"}</span>
                         <span>Vein mapping initialized.</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <span className="text-red-900">>>></span>
+                        <span className="text-red-900">{">>>"}</span>
                         <span>Gemini-2.5 Uplink established.</span>
                       </li>
                     </ul>
