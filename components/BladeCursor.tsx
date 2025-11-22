@@ -2,28 +2,61 @@ import React, { useEffect, useRef } from 'react';
 
 const BladeCursor: React.FC = () => {
   const cursorRef = useRef<HTMLDivElement>(null);
+  const pos = useRef({ x: 0, y: 0 });
+  const vel = useRef({ x: 0, y: 0 });
+  const lastTime = useRef(0);
+  const opacity = useRef(0);
 
   useEffect(() => {
     const cursor = cursorRef.current;
     if (!cursor) return;
 
-    const moveCursor = (e: MouseEvent) => {
-      cursor.style.left = `${e.clientX}px`;
-      cursor.style.top = `${e.clientY}px`;
-      // Rotate based on horizontal movement to simulate a cutting blade dragging
-      const angle = Math.min(Math.max(e.movementX * 2, -45), 45);
-      cursor.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+    const updatePos = (e: MouseEvent) => {
+      pos.current = { x: e.clientX, y: e.clientY };
     };
 
-    window.addEventListener('mousemove', moveCursor);
-    return () => window.removeEventListener('mousemove', moveCursor);
+    window.addEventListener('mousemove', updatePos);
+
+    const animate = (time: number) => {
+      if (!cursor) return;
+      const delta = time - lastTime.current;
+      lastTime.current = time;
+
+      // Calculate smooth velocity
+      const currentLeft = parseFloat(cursor.style.left) || 0;
+      const currentTop = parseFloat(cursor.style.top) || 0;
+      
+      const dx = pos.current.x - currentLeft;
+      const dy = pos.current.y - currentTop;
+      
+      // Instant snap for responsiveness, but track speed for effect
+      cursor.style.left = `${pos.current.x}px`;
+      cursor.style.top = `${pos.current.y}px`;
+
+      const speed = Math.sqrt(dx*dx + dy*dy);
+      
+      // Physics for Opacity: Fade in when moving, fade out when still
+      const targetOpacity = Math.min(speed * 0.05, 1);
+      opacity.current += (targetOpacity - opacity.current) * 0.1;
+      
+      // Physics for Rotation: Tilt based on horizontal speed
+      const angle = Math.min(Math.max(dx * 2, -45), 45);
+      
+      cursor.style.opacity = `${0.1 + opacity.current * 0.9}`; // Min opacity 0.1
+      cursor.style.transform = `translate(-50%, -50%) rotate(${angle}deg) scale(${0.8 + opacity.current * 0.2})`;
+
+      requestAnimationFrame(animate);
+    };
+
+    requestAnimationFrame(animate);
+    return () => window.removeEventListener('mousemove', updatePos);
   }, []);
 
   return (
     <div 
       ref={cursorRef} 
-      className="fixed pointer-events-none z-[100] mix-blend-exclusion text-stone-800 transition-transform duration-75 ease-out"
-      style={{ willChange: 'left, top, transform' }}
+      className="fixed pointer-events-none z-[100] mix-blend-exclusion text-stone-800 transition-none"
+      style={{ willChange: 'left, top, transform, opacity' }}
     >
       <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
         {/* Crosshair */}

@@ -7,7 +7,8 @@ import Sidebar from './components/Sidebar';
 import ArtworkCard from './components/ArtworkCard';
 import Intro from './components/Intro';
 import PageTransition from './components/PageTransition';
-import DepthRuler from './components/DepthRuler'; // Import Ruler
+import DepthRuler from './components/DepthRuler'; 
+import DustParticles from './components/DustParticles'; // Import Dust
 import { chatWithSlab } from './services/geminiService';
 import { Artwork, ChatMessage, SectionId } from './types';
 import { Language, translations } from './translations';
@@ -21,7 +22,7 @@ const artworks: Artwork[] = [
   { id: 4, serial: "FRAG-04", title: "沉积", type: "Scan", desc: "Compressed layers of forgotten history.", image: "https://picsum.photos/803/1003?grayscale" },
 ];
 
-// Pre-calculated fracture paths for the overlay
+// Pre-calculated fracture paths
 const FRACTURE_PATHS = [
     "M 20 0 L 50 100 L 40 200 L 80 300 L 60 400",
     "M 200 0 L 180 150 L 220 250 L 210 450",
@@ -30,7 +31,9 @@ const FRACTURE_PATHS = [
     "M 0 300 L 100 320 L 300 280 L 600 350",
     "M 1000 100 L 900 300 L 950 500 L 880 700",
     "M 300 800 L 350 600 L 250 400 L 400 200",
-    "M 600 800 L 620 700 L 580 500 L 650 300"
+    "M 600 800 L 620 700 L 580 500 L 650 300",
+    "M 50 800 L 100 700 L 80 500 L 120 400",
+    "M 900 0 L 920 150 L 880 300 L 940 450"
 ];
 
 const App: React.FC = () => {
@@ -49,49 +52,64 @@ const App: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionType, setTransitionType] = useState<'fracture' | 'rain'>('fracture');
   const [pendingSection, setPendingSection] = useState<SectionId | null>(null);
+  
   const [damage, setDamage] = useState({ fracture: 0, blood: 0 });
-  const [interactionCount, setInteractionCount] = useState(0); // Track total interactions
+  // KINTSUGI: Track which cracks have been repaired with gold
+  const [repairedFractureCount, setRepairedFractureCount] = useState(0);
+  
+  const [interactionCount, setInteractionCount] = useState(0);
 
   // Refs
   const mainContentRef = useRef<HTMLDivElement>(null);
+  const mousePan = useRef(0); // -1 to 1
 
   const t = translations[lang];
 
-  // Global Audio Wake-up
+  // Audio Wake-up & Pan Tracker
   useEffect(() => {
     const wakeUpAudio = () => {
-      if (audioEnabled) {
-        audioService.resume();
-      }
+      if (audioEnabled) audioService.resume();
       document.removeEventListener('click', wakeUpAudio);
     };
+    const trackMouse = (e: MouseEvent) => {
+        const w = window.innerWidth;
+        const x = e.clientX;
+        // Map 0..w to -1..1
+        mousePan.current = (x / w) * 2 - 1;
+    };
+
     document.addEventListener('click', wakeUpAudio);
-    return () => document.removeEventListener('click', wakeUpAudio);
+    window.addEventListener('mousemove', trackMouse);
+    return () => {
+        document.removeEventListener('click', wakeUpAudio);
+        window.removeEventListener('mousemove', trackMouse);
+    };
   }, [audioEnabled]);
 
   const handleSectionChange = (id: SectionId) => {
     if (activeSection === id) return;
     
-    // Always increment interaction count
     const newCount = interactionCount + 1;
     setInteractionCount(newCount);
 
-    // 30% Chance to trigger dramatic transition
-    // Otherwise, just switch instantly
     const shouldTriggerEffect = Math.random() < 0.3;
 
     if (shouldTriggerEffect) {
         const effects: ('fracture' | 'rain')[] = ['fracture', 'rain'];
         const randomEffect = effects[Math.floor(Math.random() * effects.length)];
         
-        // Trigger specific sound & Apply damage ONLY if interactions > 10
         if (randomEffect === 'fracture') {
-            audioService.playFracture();
+            audioService.playFracture(mousePan.current);
             if (newCount > 10) {
-                setDamage(prev => ({ ...prev, fracture: Math.min(prev.fracture + 1, 8) }));
+                // Use remaining available cracks
+                const maxCracks = FRACTURE_PATHS.length;
+                const currentUsed = repairedFractureCount + damage.fracture;
+                if (currentUsed < maxCracks) {
+                    setDamage(prev => ({ ...prev, fracture: prev.fracture + 1 }));
+                }
             }
         } else {
-            audioService.playRain();
+            audioService.playRain(mousePan.current);
             if (newCount > 10) {
                 setDamage(prev => ({ ...prev, blood: Math.min(prev.blood + 1, 10) }));
             }
@@ -101,28 +119,33 @@ const App: React.FC = () => {
         setPendingSection(id);
         setIsTransitioning(true);
     } else {
-        // Normal click, instant switch
-        audioService.playClick();
+        audioService.playClick(mousePan.current);
         setActiveSection(id);
     }
   };
 
+  // KINTSUGI REPAIR LOGIC
   const handleRepair = () => {
       audioService.playRepair();
+      // Move current fractures to repaired count
+      setRepairedFractureCount(prev => prev + damage.fracture);
+      // Reset current damage, but keep repaired history
       setDamage({ fracture: 0, blood: 0 });
-      setInteractionCount(0); // Reset safety counter
+      // Don't reset interaction count, let them feel the safety cycle reset naturally or keep it
+      setInteractionCount(0); 
   };
 
   const handleChat = async () => {
     if (!chatInput.trim() || chatLoading) return;
     
-    audioService.playClick();
+    audioService.playClick(mousePan.current);
     const userQ = chatInput;
     setChatInput("");
     setChatLoading(true);
     setMessages(prev => [...prev, { role: 'user', text: userQ }]);
 
-    const answer = await chatWithSlab(userQ, lang);
+    // Pass damage to AI
+    const answer = await chatWithSlab(userQ, lang, damage);
     setMessages(prev => [...prev, { role: 'ai', text: answer }]);
     setChatLoading(false);
   };
@@ -131,31 +154,28 @@ const App: React.FC = () => {
     const newState = !audioEnabled;
     setAudioEnabled(newState);
     audioService.toggleMute(!newState);
-    if (newState) audioService.playClick();
+    if (newState) audioService.playClick(mousePan.current);
   };
 
   const toggleTheme = () => {
-    audioService.playClick();
+    audioService.playClick(mousePan.current);
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
   const toggleLang = () => {
-    audioService.playClick();
+    audioService.playClick(mousePan.current);
     setLang(prev => prev === 'zh' ? 'en' : 'zh');
   };
 
-  // --- DAMAGE VISUAL CALCS ---
   const totalDamage = damage.fracture + damage.blood;
   
-  // Content Distortion
   const contentStyle: React.CSSProperties = {
       filter: `blur(${totalDamage * 0.6}px) grayscale(${totalDamage * 8}%) contrast(${100 + totalDamage * 5}%)`,
       transform: `skew(${totalDamage * 0.2}deg, ${damage.fracture * 0.1}deg) scale(${1 + damage.blood * 0.002})`,
-      opacity: Math.max(0.1, 1 - totalDamage * 0.08), // Becomes unreadable
+      opacity: Math.max(0.1, 1 - totalDamage * 0.08), 
       transition: 'all 0.5s ease-out'
   };
 
-  // Blood Overlay Spots
   const bloodSpots = useMemo(() => {
       return Array.from({ length: damage.blood * 2 }).map((_, i) => ({
           left: `${Math.random() * 100}%`,
@@ -164,16 +184,17 @@ const App: React.FC = () => {
       }));
   }, [damage.blood]);
 
-
-  // Theme Styles
-  const containerClass = theme === 'dark' 
-    ? 'bg-stone-900 text-stone-300' 
-    : 'bg-stone-300 text-stone-800';
+  const containerClass = theme === 'dark' ? 'bg-stone-900 text-stone-300' : 'bg-stone-300 text-stone-800';
   const mainBgClass = theme === 'dark' ? 'bg-stone-950/50' : 'bg-stone-100/5';
   const headerClass = theme === 'dark' ? 'text-stone-200' : 'text-stone-800';
-  // Increased visibility for background text
   const bigTextClass = theme === 'dark' ? 'text-stone-800/40' : 'text-stone-400/30'; 
   const slabShapePoly = 'polygon(40px 0, calc(100% - 60px) 0, 100% 60px, 100% 100%, 0 100%, 0 40px)';
+
+  // Calculate path slices
+  // Repaired cracks (Gold) are from 0 to repairedFractureCount
+  const repairedPaths = FRACTURE_PATHS.slice(0, repairedFractureCount);
+  // Active cracks (Red/Dark) are from repairedFractureCount to + damage.fracture
+  const activePaths = FRACTURE_PATHS.slice(repairedFractureCount, repairedFractureCount + damage.fracture);
 
   return (
     <div className={`w-full h-screen flex items-center justify-center p-2 md:p-8 lg:p-12 overflow-hidden transition-colors duration-1000 ${theme === 'dark' ? 'bg-stone-950' : 'bg-stone-200'}`}>
@@ -181,6 +202,7 @@ const App: React.FC = () => {
       
       <BladeCursor />
       <ScissorTrail />
+      <DustParticles />
       
       <PageTransition 
         isActive={isTransitioning} 
@@ -194,7 +216,7 @@ const App: React.FC = () => {
         }}
       />
 
-      {/* Settings Panel (Floating) */}
+      {/* Settings Panel */}
       <div className="fixed top-4 right-4 md:right-12 z-50 flex flex-col items-end md:flex-row gap-2 md:gap-4 font-mono text-[0.6rem] tracking-widest select-none">
          <div className="flex gap-4">
              <button onClick={toggleAudio} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? (audioEnabled ? 'text-red-500' : 'text-stone-600') : (audioEnabled ? 'text-red-800' : 'text-stone-400')}`}>
@@ -214,43 +236,48 @@ const App: React.FC = () => {
          </div>
       </div>
 
-      {/* Layout Container */}
       <div className={`relative w-full max-w-[1600px] h-full md:h-[90vh] transition-all duration-[1000ms] ease-out ${
           introDone ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
       }`}>
         
-        {/* MAIN FACE LAYER */}
         <div 
             className={`relative w-full h-full stone-texture flex overflow-hidden rough-edge z-10 border-t border-l ${theme === 'dark' ? 'border-stone-700' : 'border-stone-100/50'} ${containerClass}`}
             style={{ clipPath: slabShapePoly }}
         >
-            {/* Stone Veins Background */}
             <StoneVeins theme={theme} />
 
-            {/* 1. VISUAL DECAY LAYERS */}
-            
-            {/* Blood Overlay */}
-            {damage.blood > 0 && (
-                <div className="absolute inset-0 pointer-events-none mix-blend-multiply z-[5]">
-                    {/* General Haze */}
-                    <div className="absolute inset-0 bg-red-900" style={{ opacity: damage.blood * 0.05 }}></div>
-                    {/* Spots */}
-                    {bloodSpots.map((spot, i) => (
-                         <div 
-                            key={i}
-                            className="absolute rounded-full bg-red-900 blur-xl opacity-40"
-                            style={{ ...spot }}
-                         />
+            {/* KINTSUGI REPAIRED FRACTURES (Gold Layer) */}
+            {repairedPaths.length > 0 && (
+                <svg className="absolute inset-0 w-full h-full pointer-events-none z-[4] mix-blend-screen">
+                    {repairedPaths.map((path, i) => (
+                        <g key={`repaired-${i}`}>
+                            {/* Gold Core */}
+                            <path 
+                                d={path}
+                                stroke="#D4AF37" 
+                                strokeWidth={2}
+                                fill="none"
+                            />
+                            {/* Gold Glow */}
+                            <path 
+                                d={path}
+                                stroke="#D4AF37" 
+                                strokeWidth={4}
+                                strokeOpacity={0.3}
+                                fill="none"
+                                filter="blur(2px)"
+                            />
+                        </g>
                     ))}
-                </div>
+                </svg>
             )}
-            
-            {/* Fracture Overlay */}
-            {damage.fracture > 0 && (
-                <svg className="absolute inset-0 w-full h-full pointer-events-none z-[5] mix-blend-multiply opacity-60">
-                    {FRACTURE_PATHS.slice(0, damage.fracture).map((path, i) => (
+
+            {/* ACTIVE FRACTURES (Red/Dark Layer) */}
+            {activePaths.length > 0 && (
+                <svg className="absolute inset-0 w-full h-full pointer-events-none z-[5] mix-blend-multiply opacity-80">
+                    {activePaths.map((path, i) => (
                         <path 
-                            key={i}
+                            key={`active-${i}`}
                             d={path}
                             stroke={theme === 'dark' ? '#000' : '#292524'}
                             strokeWidth={1 + Math.random()}
@@ -260,12 +287,24 @@ const App: React.FC = () => {
                     ))}
                 </svg>
             )}
+            
+            {/* BLOOD LAYER */}
+            {damage.blood > 0 && (
+                <div className="absolute inset-0 pointer-events-none mix-blend-multiply z-[5]">
+                    <div className="absolute inset-0 bg-red-900" style={{ opacity: damage.blood * 0.05 }}></div>
+                    {bloodSpots.map((spot, i) => (
+                         <div 
+                            key={i}
+                            className="absolute rounded-full bg-red-900 blur-xl opacity-40"
+                            style={{ ...spot }}
+                         />
+                    ))}
+                </div>
+            )}
 
-            {/* 2. CONTENT STRUCTURE */}
+            {/* MAIN CONTENT */}
             <div className="flex flex-col md:flex-row w-full h-full" style={contentStyle}>
                 <Sidebar activeSection={activeSection} setActiveSection={handleSectionChange} lang={lang} theme={theme} />
-                
-                {/* DEPTH RULER */}
                 <DepthRuler scrollContainerRef={mainContentRef} theme={theme} />
 
                 <main 
@@ -273,7 +312,6 @@ const App: React.FC = () => {
                     className={`flex-1 h-full overflow-y-auto custom-scrollbar relative z-10 ${mainBgClass}`}
                 >
                     <div className="min-h-full p-6 md:p-16 pb-32">
-                        {/* Header */}
                         <header className="mb-12 md:mb-20 border-b pb-8 relative select-none transition-colors duration-500 border-stone-500/20">
                             <h2 className={`text-[4rem] md:text-[6rem] font-bold absolute -top-10 md:-top-16 -left-4 z-0 engraved-text opacity-25 ${bigTextClass}`}>
                                 {activeSection.toUpperCase()}
@@ -285,7 +323,6 @@ const App: React.FC = () => {
                             </h2>
                         </header>
 
-                        {/* GALLERY SECTION */}
                         {activeSection === 'gallery' && (
                             <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
                                 {artworks.map(work => (
@@ -294,7 +331,6 @@ const App: React.FC = () => {
                             </div>
                         )}
 
-                        {/* ABOUT SECTION */}
                         {activeSection === 'about' && (
                             <div className={`max-w-2xl space-y-8 ${theme === 'dark' ? 'text-stone-400' : 'text-stone-600'}`}>
                                 <p className="leading-loose font-serif text-lg md:text-xl engraved-text">
@@ -311,12 +347,12 @@ const App: React.FC = () => {
                                         ))}
                                         {damage.blood > 0 && <li className="text-red-800">!!! ORGANIC CONTAMINATION DETECTED</li>}
                                         {damage.fracture > 0 && <li className="text-red-800">!!! STRUCTURAL INTEGRITY COMPROMISED</li>}
+                                        {repairedFractureCount > 0 && <li className="text-yellow-600">>>> KINTSUGI REPAIR PROTOCOL APPLIED</li>}
                                     </ul>
                                 </div>
                             </div>
                         )}
 
-                        {/* STATEMENT SECTION */}
                         {activeSection === 'statement' && (
                             <div className="max-w-2xl mx-auto mt-10">
                                 <div className="text-center mb-12">

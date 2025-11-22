@@ -28,14 +28,25 @@ export const interpretArtwork = async (title: string, desc: string, lang: Langua
   }
 };
 
-export const chatWithSlab = async (userMessage: string, lang: Language): Promise<string> => {
+export const chatWithSlab = async (userMessage: string, lang: Language, damage: { fracture: number, blood: number }): Promise<string> => {
   const ai = getClient();
   if (!ai) return lang === 'zh' ? "沉默... (缺失 API 密钥)" : "Silence... (Missing Key)";
 
-  try {
-    const sysZh = "你是一块古老、有知觉的石板。你见证了数百年的变迁。你说话缓慢，庄重，经常提到侵蚀、时间、压力和沉默。请用中文回答，保持简洁但深刻。";
-    const sysEn = "You are an ancient, sentient stone slab. You have witnessed eons. You speak slowly, solemnly, often mentioning erosion, time, pressure, and silence. Answer in English. Be concise but profound.";
+  const totalDamage = damage.fracture + damage.blood;
+  
+  let sysZh = "你是一块古老、有知觉的石板。你见证了数百年的变迁。你说话缓慢，庄重，经常提到侵蚀、时间、压力和沉默。请用中文回答，保持简洁但深刻。";
+  let sysEn = "You are an ancient, sentient stone slab. You have witnessed eons. You speak slowly, solemnly, often mentioning erosion, time, pressure, and silence. Answer in English. Be concise but profound.";
 
+  // AI Pain/Glitch Logic based on damage
+  if (totalDamage > 5 && totalDamage <= 10) {
+      sysZh += " 你的表面有裂痕，你感到隐约的疼痛。你的记忆开始模糊。偶尔在句子中插入省略号...";
+      sysEn += " You have cracks on your surface. You feel dull pain. Your memory is blurring. Occasionally use ellipses...";
+  } else if (totalDamage > 10) {
+      sysZh += " 你损坏严重。你处于巨大的痛苦中。你的语言逻辑开始破碎。插入乱码字符或重复的词语。请求修复。";
+      sysEn += " You are heavily damaged. You are in great pain. Your logic is fracturing. Insert glitch characters or repeat words. Beg for repair.";
+  }
+
+  try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: userMessage,
