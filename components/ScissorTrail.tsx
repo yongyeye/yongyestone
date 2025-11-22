@@ -15,7 +15,6 @@ const ScissorTrail: React.FC = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -32,7 +31,7 @@ const ScissorTrail: React.FC = () => {
         x: e.clientX + (Math.random() - 0.5) * jitter,
         y: e.clientY + (Math.random() - 0.5) * jitter,
         life: 1.0,
-        width: Math.random() * 2 + 0.5
+        width: Math.random() * 2 + 1.0,
       });
     };
     window.addEventListener('mousemove', addPoint);
@@ -41,9 +40,8 @@ const ScissorTrail: React.FC = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       if (pointsRef.current.length > 1) {
-        ctx.beginPath();
-        // Bright red, resembling sparks or blood
-        ctx.strokeStyle = 'rgba(200, 0, 0, 0.7)';
+        // Bright red blood/spark color
+        ctx.strokeStyle = 'rgba(185, 28, 28, 0.7)'; // red-700
         ctx.lineCap = 'butt';
         ctx.lineJoin = 'miter';
 
@@ -58,12 +56,11 @@ const ScissorTrail: React.FC = () => {
             ctx.lineTo(p2.x, p2.y);
             ctx.stroke();
           }
-          p1.life -= 0.03; // Fade out speed
+          p1.life -= 0.025; // Fade speed
         }
       }
       
-      // Remove dead points
-      pointsRef.current = pointsRef.current.filter(p => p.life > 0);
+      pointsRef.current = pointsRef.current.filter((p) => p.life > 0);
       rafRef.current = requestAnimationFrame(animate);
     };
     animate();
@@ -75,7 +72,12 @@ const ScissorTrail: React.FC = () => {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none z-50" />;
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className="fixed top-0 left-0 w-full h-full pointer-events-none z-50" 
+    />
+  );
 };
 
 export default ScissorTrail;
