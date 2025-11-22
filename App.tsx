@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import BladeCursor from './components/BladeCursor';
 import ScissorTrail from './components/ScissorTrail';
 import StoneVeins from './components/StoneVeins';
@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar';
 import ArtworkCard from './components/ArtworkCard';
 import Intro from './components/Intro';
 import PageTransition from './components/PageTransition';
+import DepthRuler from './components/DepthRuler'; // Import Ruler
 import { chatWithSlab } from './services/geminiService';
 import { Artwork, ChatMessage, SectionId } from './types';
 import { Language, translations } from './translations';
@@ -50,6 +51,9 @@ const App: React.FC = () => {
   const [pendingSection, setPendingSection] = useState<SectionId | null>(null);
   const [damage, setDamage] = useState({ fracture: 0, blood: 0 });
   const [interactionCount, setInteractionCount] = useState(0); // Track total interactions
+
+  // Refs
+  const mainContentRef = useRef<HTMLDivElement>(null);
 
   const t = translations[lang];
 
@@ -158,7 +162,8 @@ const App: React.FC = () => {
     : 'bg-stone-300 text-stone-800';
   const mainBgClass = theme === 'dark' ? 'bg-stone-950/50' : 'bg-stone-100/5';
   const headerClass = theme === 'dark' ? 'text-stone-200' : 'text-stone-800';
-  const bigTextClass = theme === 'dark' ? 'text-stone-800/20' : 'text-stone-600/5';
+  // Increased visibility for background text
+  const bigTextClass = theme === 'dark' ? 'text-stone-800/40' : 'text-stone-400/30'; 
   const slabShapePoly = 'polygon(40px 0, calc(100% - 60px) 0, 100% 60px, 100% 100%, 0 100%, 0 40px)';
 
   return (
@@ -250,12 +255,18 @@ const App: React.FC = () => {
             {/* 2. CONTENT STRUCTURE */}
             <div className="flex flex-col md:flex-row w-full h-full" style={contentStyle}>
                 <Sidebar activeSection={activeSection} setActiveSection={handleSectionChange} lang={lang} theme={theme} />
+                
+                {/* DEPTH RULER */}
+                <DepthRuler scrollContainerRef={mainContentRef} theme={theme} />
 
-                <main className={`flex-1 h-full overflow-y-auto custom-scrollbar relative z-10 ${mainBgClass}`}>
+                <main 
+                    ref={mainContentRef}
+                    className={`flex-1 h-full overflow-y-auto custom-scrollbar relative z-10 ${mainBgClass}`}
+                >
                     <div className="min-h-full p-6 md:p-16 pb-32">
                         {/* Header */}
                         <header className="mb-12 md:mb-20 border-b pb-8 relative select-none transition-colors duration-500 border-stone-500/20">
-                            <h2 className={`text-[4rem] md:text-[6rem] font-bold absolute -top-10 md:-top-16 -left-4 z-0 engraved-text opacity-10 ${bigTextClass}`}>
+                            <h2 className={`text-[4rem] md:text-[6rem] font-bold absolute -top-10 md:-top-16 -left-4 z-0 engraved-text opacity-25 ${bigTextClass}`}>
                                 {activeSection.toUpperCase()}
                             </h2>
                             <h2 className={`text-2xl md:text-4xl font-serif relative z-10 tracking-widest engraved-text ${headerClass}`}>
