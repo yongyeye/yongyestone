@@ -10,33 +10,33 @@ const getClient = () => {
 
 export const interpretArtwork = async (title: string, desc: string): Promise<string> => {
   const ai = getClient();
-  if (!ai) return "The slab is disconnected from the ethereal plane (Missing API Key).";
+  if (!ai) return "石板与虚空断开连接（缺失 API 密钥）。";
 
   try {
-    const prompt = `You are an ancient stone keeper. Interpret the artifact titled "${title}". Description: "${desc}". 
-    Speak in a mysterious, slightly poetic, yet concise tone. Use Markdown. Limit to 100 words.`;
+    const prompt = `你是一位古老的石碑守护者。请解读这件名为"${title}"的文物。描述："${desc}"。
+    请用中文回答。语气神秘、略带诗意且简洁。限制在100字以内。`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
     });
-    return response.text || "The runes are illegible.";
+    return response.text || "符文难以辨认。";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "A crack in the stone prevents reading the inscription.";
+    return "石板上的裂痕阻碍了铭文的读取。";
   }
 };
 
 export const chatWithSlab = async (userMessage: string): Promise<string> => {
   const ai = getClient();
-  if (!ai) return "Silence... (Missing API Key)";
+  if (!ai) return "沉默... (缺失 API 密钥)";
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: userMessage,
       config: {
-        systemInstruction: "You are an ancient, sentient stone slab. You have seen centuries pass. You speak slowly, with gravitas, often referencing erosion, time, pressure, and silence. Keep responses concise but profound."
+        systemInstruction: "你是一块古老、有知觉的石板。你见证了数百年的变迁。你说话缓慢，庄重，经常提到侵蚀、时间、压力和沉默。请用中文回答，保持简洁但深刻。"
       }
     });
     return response.text || "...";

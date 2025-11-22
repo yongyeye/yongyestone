@@ -43,7 +43,7 @@ const ArtworkCard: React.FC<Props> = ({ work }) => {
               onClick={handleInterpret}
               className="px-4 py-2 border border-stone-500/50 text-stone-300 text-xs tracking-widest hover:bg-red-900 hover:border-red-900 hover:text-white transition-colors duration-300"
             >
-              ⟡ READ INSCRIPTION
+              ⟡ 解读碑文
             </button>
           </div>
         </div>
@@ -69,13 +69,13 @@ const ArtworkCard: React.FC<Props> = ({ work }) => {
           />
           <div className="relative bg-stone-300 w-full max-w-lg p-8 md:p-12 shadow-2xl border-t border-stone-100/50 animate-fade-in stone-texture rounded-sm">
             <h3 className="text-xl font-bold mb-6 text-stone-800 engraved-text tracking-widest border-b border-stone-800/10 pb-4">
-              LITHIC ECHO
+              石碑回响
             </h3>
             
             {loading ? (
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                  <div className="w-8 h-8 border-2 border-stone-400 border-t-red-900 rounded-full animate-spin"></div>
-                 <span className="text-xs font-mono text-stone-600 animate-pulse">Deciphering texture...</span>
+                 <span className="text-xs font-mono text-stone-600 animate-pulse">正在抚摸纹理...</span>
               </div>
             ) : (
               <div className="font-serif text-stone-800 leading-loose text-lg italic">
@@ -91,7 +91,7 @@ const ArtworkCard: React.FC<Props> = ({ work }) => {
             </button>
             
             <div className="absolute bottom-2 right-4 text-[0.5rem] font-mono text-stone-500 opacity-50">
-               GEN-2.5-FLASH-INTERPRETATION
+               GEN-2.5-FLASH-解读结果
             </div>
           </div>
         </div>

@@ -8,9 +8,9 @@ interface Props {
 
 const Sidebar: React.FC<Props> = ({ activeSection, setActiveSection }) => {
   const menuItems: MenuItem[] = [
-    { id: 'gallery', label: 'EXHIBITS', sub: '陈列' },
-    { id: 'about', label: 'PROFILE', sub: '档案' },
-    { id: 'statement', label: 'STATEMENT', sub: '自述' }
+    { id: 'gallery', label: '遗迹陈列', sub: '陈列' },
+    { id: 'about', label: '挖掘档案', sub: '档案' },
+    { id: 'statement', label: '石板自述', sub: '自述' }
   ];
 
   return (
@@ -18,11 +18,11 @@ const Sidebar: React.FC<Props> = ({ activeSection, setActiveSection }) => {
       {/* Logo Area */}
       <div className="p-6 md:p-10">
         <h1 className="text-4xl font-bold tracking-widest engraved-text text-stone-800 leading-none">
-          VEIN<br/>SLAB
+          脉<br/>络
         </h1>
         <div className="w-12 h-1 bg-red-900/60 mt-4 mb-2 rounded-full"></div>
         <p className="hidden md:block text-[0.5rem] font-mono tracking-[0.4em] text-stone-600">
-          PALEOLITHIC<br/>DIGITAL
+          旧石器数字接口<br/>PALEOLITHIC
         </p>
       </div>
 
@@ -67,8 +67,8 @@ const Sidebar: React.FC<Props> = ({ activeSection, setActiveSection }) => {
       <div className="p-6 md:p-10 font-mono text-[0.6rem] text-stone-500 opacity-60">
         <div className="md:hidden">ID: 894</div>
         <div className="hidden md:block">
-          ARTIFACT ID: 894-SLAB<br/>
-          RECOVERED: 2024
+          文物编号: 894-SLAB<br/>
+          出土年份: 2024
         </div>
       </div>
     </aside>

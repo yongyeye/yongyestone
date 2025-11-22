@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 
 interface IntroProps {
@@ -23,7 +22,8 @@ const Intro: React.FC<IntroProps> = ({ onComplete }) => {
 
     const timeouts = timeline.map(item => setTimeout(item.action, item.t));
     return () => timeouts.forEach(clearTimeout);
-  }, [onComplete]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (phase === 4) return null;
 
@@ -35,10 +35,10 @@ const Intro: React.FC<IntroProps> = ({ onComplete }) => {
           phase >= 3 ? '-translate-x-full' : 'translate-x-0'
         }`}
       >
-        {/* Left Text content positioned absolutely to stay centered relative to screen, not panel */}
+        {/* Left Text content */}
         <div className={`absolute right-0 top-1/2 -translate-y-1/2 pr-8 text-right transition-opacity duration-500 ${phase === 1 ? 'opacity-100' : 'opacity-0'}`}>
           <div className="font-mono text-[0.6rem] text-stone-500 tracking-[0.2em] mb-2">SYS.894</div>
-          <div className="font-serif text-2xl text-stone-200 tracking-widest engraved-text">INITIALIZING</div>
+          <div className="font-serif text-2xl text-stone-200 tracking-widest engraved-text">系统初始化</div>
         </div>
       </div>
 
@@ -50,8 +50,8 @@ const Intro: React.FC<IntroProps> = ({ onComplete }) => {
       >
         {/* Right Text content */}
         <div className={`absolute left-0 top-1/2 -translate-y-1/2 pl-8 text-left transition-opacity duration-500 ${phase === 1 ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="font-mono text-[0.6rem] text-stone-500 tracking-[0.2em] mb-2">DEPTH: 0.0m</div>
-          <div className="font-serif text-2xl text-stone-200 tracking-widest engraved-text">LITHIC CORE</div>
+          <div className="font-mono text-[0.6rem] text-stone-500 tracking-[0.2em] mb-2">深度: 0.0m</div>
+          <div className="font-serif text-2xl text-stone-200 tracking-widest engraved-text">岩石核心</div>
         </div>
       </div>
 

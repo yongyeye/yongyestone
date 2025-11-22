@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import BladeCursor from './components/BladeCursor';
 import ScissorTrail from './components/ScissorTrail';
@@ -11,16 +10,16 @@ import { Artwork, ChatMessage, SectionId } from './types';
 
 // Mock Data
 const artworks: Artwork[] = [
-  { id: 1, serial: "FRAG-01", title: "Erosion", type: "Mixed Media", desc: "A study of wind wearing down granite over a millennia.", image: "https://picsum.photos/800/1000?grayscale" },
-  { id: 2, serial: "FRAG-02", title: "Stasis", type: "Oil on Slate", desc: "A moment frozen in amber and dust.", image: "https://picsum.photos/801/1001?grayscale" },
-  { id: 3, serial: "FRAG-03", title: "Fissure", type: "Photography", desc: "The exact moment the structure failed.", image: "https://picsum.photos/802/1002?grayscale" },
-  { id: 4, serial: "FRAG-04", title: "Sediment", type: "Digital Scan", desc: "Layers of forgotten history compressed.", image: "https://picsum.photos/803/1003?grayscale" },
+  { id: 1, serial: "FRAG-01", title: "风化", type: "混合媒介", desc: "千年花岗岩风蚀研究。", image: "https://picsum.photos/800/1000?grayscale" },
+  { id: 2, serial: "FRAG-02", title: "凝固", type: "板岩油画", desc: "尘埃与琥珀中的定格瞬间。", image: "https://picsum.photos/801/1001?grayscale" },
+  { id: 3, serial: "FRAG-03", title: "裂痕", type: "摄影", desc: "结构崩塌的确切时刻。", image: "https://picsum.photos/802/1002?grayscale" },
+  { id: 4, serial: "FRAG-04", title: "沉积", type: "数字扫描", desc: "被遗忘历史的压缩层。", image: "https://picsum.photos/803/1003?grayscale" },
 ];
 
 const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<SectionId>('gallery');
   const [chatInput, setChatInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([{ role: 'ai', text: 'The stone is listening...' }]);
+  const [messages, setMessages] = useState<ChatMessage[]>([{ role: 'ai', text: '石板正在聆听...' }]);
   const [chatLoading, setChatLoading] = useState(false);
   const [introDone, setIntroDone] = useState(false); // State for intro completion
 
@@ -39,7 +38,7 @@ const App: React.FC = () => {
 
   return (
     <div className="w-full h-screen flex items-center justify-center p-2 md:p-8 lg:p-12 bg-stone-200 overflow-hidden">
-      <Intro onComplete={() => setIntroDone(true)} />
+      { !introDone && <Intro onComplete={() => setIntroDone(true)} /> }
       
       <BladeCursor />
       <ScissorTrail />
@@ -68,9 +67,9 @@ const App: React.FC = () => {
                 {activeSection}
               </h2>
               <h2 className="text-3xl md:text-4xl font-serif text-stone-800 relative z-10 engraved-text pl-2">
-                {activeSection === 'gallery' && 'Recovered Artifacts'}
-                {activeSection === 'about' && 'Excavation Log'}
-                {activeSection === 'statement' && 'Stone Inscription'}
+                {activeSection === 'gallery' && '遗迹陈列'}
+                {activeSection === 'about' && '挖掘记录'}
+                {activeSection === 'statement' && '石板铭文'}
               </h2>
             </header>
 
@@ -85,23 +84,23 @@ const App: React.FC = () => {
               {activeSection === 'about' && (
                 <div className="max-w-2xl space-y-8 text-stone-700">
                   <p className="leading-loose font-serif text-xl engraved-text">
-                    We do not build; we uncover. This interface is a digital excavation of memory. 
-                    Like fossils trapped in slate, these works are preserved moments of tension and release.
+                    我们不创造，我们挖掘。这个接口是对记忆的数字考古。
+                    如同困在板岩中的化石，这些作品是张力与释放的凝固瞬间。
                   </p>
                   <div className="p-8 bg-stone-800/5 border border-stone-800/10 rounded-sm shadow-inner">
-                    <h4 className="font-mono text-xs mb-6 text-stone-500 tracking-widest">SYSTEM ARCHIVE</h4>
+                    <h4 className="font-mono text-xs mb-6 text-stone-500 tracking-widest">系统归档</h4>
                     <ul className="space-y-4 font-mono text-xs text-stone-600">
                       <li className="flex items-center gap-2">
                         <span className="text-red-900">{">>>"}</span> 
-                        <span>Sequence 01: Initialization complete.</span>
+                        <span>序列 01: 初始化完成。</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="text-red-900">{">>>"}</span>
-                        <span>Vein mapping initialized.</span>
+                        <span>矿脉映射已启动。</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="text-red-900">{">>>"}</span>
-                        <span>Gemini-2.5 Uplink established.</span>
+                        <span>Gemini-2.5 链接已建立。</span>
                       </li>
                     </ul>
                   </div>
@@ -112,7 +111,7 @@ const App: React.FC = () => {
                 <div className="max-w-3xl mx-auto mt-8">
                   <div className="text-center mb-12">
                     <p className="text-2xl font-serif italic text-stone-600">
-                      "The stone does not speak, but it remembers everything."
+                      "石头不说话，但它记得一切。"
                     </p>
                   </div>
                   
@@ -136,7 +135,7 @@ const App: React.FC = () => {
                       ))}
                       {chatLoading && (
                         <div className="text-xs text-red-800 font-mono animate-pulse pl-2">
-                          ECHOING...
+                          回响中...
                         </div>
                       )}
                     </div>
@@ -147,13 +146,13 @@ const App: React.FC = () => {
                         onChange={e => setChatInput(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleChat()}
                         className="flex-1 bg-transparent border-b border-stone-400/30 py-2 px-2 outline-none text-base font-serif text-stone-800 placeholder-stone-400/50 focus:border-red-900/50 transition-colors"
-                        placeholder="Engrave your question onto the slab..."
+                        placeholder="将你的疑问刻入石板..."
                       />
                       <button 
                         onClick={handleChat} 
                         className="px-6 py-2 bg-stone-800 text-stone-200 text-xs font-mono tracking-widest hover:bg-red-900 transition-colors shadow-md"
                       >
-                        ENGRAVE
+                        刻录
                       </button>
                     </div>
                   </div>
