@@ -38,13 +38,7 @@ export const translations = {
     settings: {
       audio: "声场",
       theme: "材质",
-      lang: "语言",
-      transition: "幻象",
-      effect: "形态",
-      effects: {
-        fracture: "裂隙",
-        rain: "血雨"
-      }
+      lang: "语言"
     }
   },
   en: {
@@ -85,13 +79,7 @@ export const translations = {
     settings: {
       audio: "AUDIO",
       theme: "MAT",
-      lang: "LANG",
-      transition: "VISION",
-      effect: "TYPE",
-      effects: {
-        fracture: "CRACK",
-        rain: "RAIN"
-      }
+      lang: "LANG"
     }
   }
 };

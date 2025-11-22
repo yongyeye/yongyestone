@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BladeCursor from './components/BladeCursor';
 import ScissorTrail from './components/ScissorTrail';
 import StoneVeins from './components/StoneVeins';
@@ -30,25 +29,39 @@ const App: React.FC = () => {
   // Settings State
   const [lang, setLang] = useState<Language>('zh');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [audioEnabled, setAudioEnabled] = useState(false);
-  const [transitionEnabled, setTransitionEnabled] = useState(true);
-  const [transitionType, setTransitionType] = useState<'fracture' | 'rain'>('fracture');
+  // Default Audio ON, but waits for user interaction to start
+  const [audioEnabled, setAudioEnabled] = useState(true);
   
-  // Transition Execution State
+  // Transition State
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionType, setTransitionType] = useState<'fracture' | 'rain'>('fracture');
   const [pendingSection, setPendingSection] = useState<SectionId | null>(null);
 
   const t = translations[lang];
+
+  // Global Audio Wake-up
+  useEffect(() => {
+    const wakeUpAudio = () => {
+      if (audioEnabled) {
+        audioService.resume();
+      }
+      // Remove listener after first interaction
+      document.removeEventListener('click', wakeUpAudio);
+    };
+    
+    document.addEventListener('click', wakeUpAudio);
+    return () => document.removeEventListener('click', wakeUpAudio);
+  }, [audioEnabled]);
 
   const handleSectionChange = (id: SectionId) => {
     if (activeSection === id) return;
     audioService.playClick();
 
-    if (!transitionEnabled) {
-      setActiveSection(id);
-      return;
-    }
-
+    // Randomly select a transition effect
+    const effects: ('fracture' | 'rain')[] = ['fracture', 'rain'];
+    const randomEffect = effects[Math.floor(Math.random() * effects.length)];
+    
+    setTransitionType(randomEffect);
     setPendingSection(id);
     setIsTransitioning(true);
   };
@@ -70,8 +83,8 @@ const App: React.FC = () => {
   const toggleAudio = () => {
     const newState = !audioEnabled;
     setAudioEnabled(newState);
-    audioService.toggleMute(!newState);
-    audioService.playClick();
+    audioService.toggleMute(!newState); // If disabled (false), mute (true)
+    if (newState) audioService.playClick();
   };
 
   const toggleTheme = () => {
@@ -84,20 +97,11 @@ const App: React.FC = () => {
     setLang(prev => prev === 'zh' ? 'en' : 'zh');
   };
 
-  const toggleTransition = () => {
-    audioService.playClick();
-    setTransitionEnabled(prev => !prev);
-  };
-
-  const toggleTransitionType = () => {
-    audioService.playClick();
-    setTransitionType(prev => prev === 'fracture' ? 'rain' : 'fracture');
-  };
-
   // Dynamic Styles based on Theme
+  // Removed standard box-shadow and borders in favor of clip-path compatible styles
   const containerClass = theme === 'dark' 
-    ? 'bg-stone-900 text-stone-300 shadow-[20px_20px_60px_rgba(0,0,0,0.6),-5px_-5px_20px_rgba(30,30,30,0.5)] border-stone-800' 
-    : 'bg-stone-300 text-stone-800 shadow-[20px_20px_60px_rgba(0,0,0,0.3),-20px_-20px_60px_rgba(255,255,255,0.5)] border-white/20';
+    ? 'bg-stone-900 text-stone-300' 
+    : 'bg-stone-300 text-stone-800';
 
   const mainBgClass = theme === 'dark' ? 'bg-stone-950/50' : 'bg-stone-100/5';
   const headerClass = theme === 'dark' ? 'text-stone-200' : 'text-stone-800';
@@ -122,7 +126,7 @@ const App: React.FC = () => {
         }}
       />
 
-      {/* Settings Panel (Floating) */}
+      {/* Settings Panel (Floating) - Simplified */}
       <div className="fixed top-4 right-4 md:right-12 z-50 flex flex-col items-end md:flex-row gap-2 md:gap-4 font-mono text-[0.6rem] tracking-widest select-none">
          <div className="flex gap-4">
              <button onClick={toggleAudio} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? (audioEnabled ? 'text-red-500' : 'text-stone-600') : (audioEnabled ? 'text-red-800' : 'text-stone-400')}`}>
@@ -135,23 +139,23 @@ const App: React.FC = () => {
                 [{t.settings.lang}: {lang.toUpperCase()}]
              </button>
          </div>
-         <div className="flex gap-4">
-             <button onClick={toggleTransition} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? (transitionEnabled ? 'text-red-500' : 'text-stone-600') : (transitionEnabled ? 'text-red-800' : 'text-stone-400')}`}>
-                [{t.settings.transition}: {transitionEnabled ? 'ON' : 'OFF'}]
-             </button>
-             {transitionEnabled && (
-                 <button onClick={toggleTransitionType} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? 'text-stone-400' : 'text-stone-500'}`}>
-                    [{t.settings.effect}: {t.settings.effects[transitionType]}]
-                 </button>
-             )}
-         </div>
       </div>
 
       {/* Main Slab Container */}
       <div 
-        className={`relative w-full max-w-[1600px] h-full md:h-[90vh] stone-texture rounded-sm flex overflow-hidden border rough-edge transition-all duration-[1000ms] ease-out ${
+        className={`relative w-full max-w-[1600px] h-full md:h-[90vh] stone-texture flex overflow-hidden rough-edge transition-all duration-[1000ms] ease-out ${
           introDone ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
         } ${containerClass}`}
+        style={{
+            // Irregular Hexagon Shape:
+            // Top-Left Chamfer: 40px
+            // Top-Right Chamfer: 60px
+            clipPath: 'polygon(40px 0, calc(100% - 60px) 0, 100% 60px, 100% 100%, 0 100%, 0 40px)',
+            // Drop shadow filter allows shadow to follow the clipped shape (unlike box-shadow)
+            filter: theme === 'dark' 
+                ? 'drop-shadow(20px 20px 40px rgba(0,0,0,0.6))' 
+                : 'drop-shadow(20px 20px 40px rgba(0,0,0,0.25))'
+        }}
       >
         
         {/* Background Effects */}
