@@ -72,30 +72,39 @@ const App: React.FC = () => {
   const handleSectionChange = (id: SectionId) => {
     if (activeSection === id) return;
     
-    // Random effect
-    const effects: ('fracture' | 'rain')[] = ['fracture', 'rain'];
-    const randomEffect = effects[Math.floor(Math.random() * effects.length)];
-    
-    // Increment interaction count
+    // Always increment interaction count
     const newCount = interactionCount + 1;
     setInteractionCount(newCount);
 
-    // Trigger specific sound & Apply damage ONLY if interactions > 10
-    if (randomEffect === 'fracture') {
-        audioService.playFracture();
-        if (newCount > 10) {
-            setDamage(prev => ({ ...prev, fracture: Math.min(prev.fracture + 1, 8) }));
+    // 30% Chance to trigger dramatic transition
+    // Otherwise, just switch instantly
+    const shouldTriggerEffect = Math.random() < 0.3;
+
+    if (shouldTriggerEffect) {
+        const effects: ('fracture' | 'rain')[] = ['fracture', 'rain'];
+        const randomEffect = effects[Math.floor(Math.random() * effects.length)];
+        
+        // Trigger specific sound & Apply damage ONLY if interactions > 10
+        if (randomEffect === 'fracture') {
+            audioService.playFracture();
+            if (newCount > 10) {
+                setDamage(prev => ({ ...prev, fracture: Math.min(prev.fracture + 1, 8) }));
+            }
+        } else {
+            audioService.playRain();
+            if (newCount > 10) {
+                setDamage(prev => ({ ...prev, blood: Math.min(prev.blood + 1, 10) }));
+            }
         }
+        
+        setTransitionType(randomEffect);
+        setPendingSection(id);
+        setIsTransitioning(true);
     } else {
-        audioService.playRain();
-        if (newCount > 10) {
-            setDamage(prev => ({ ...prev, blood: Math.min(prev.blood + 1, 10) }));
-        }
+        // Normal click, instant switch
+        audioService.playClick();
+        setActiveSection(id);
     }
-    
-    setTransitionType(randomEffect);
-    setPendingSection(id);
-    setIsTransitioning(true);
   };
 
   const handleRepair = () => {
