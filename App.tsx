@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import BladeCursor from './components/BladeCursor';
 import ScissorTrail from './components/ScissorTrail';
@@ -5,12 +6,13 @@ import StoneVeins from './components/StoneVeins';
 import Sidebar from './components/Sidebar';
 import ArtworkCard from './components/ArtworkCard';
 import Intro from './components/Intro';
+import PageTransition from './components/PageTransition';
 import { chatWithSlab } from './services/geminiService';
 import { Artwork, ChatMessage, SectionId } from './types';
 import { Language, translations } from './translations';
 import { audioService } from './services/audioService';
 
-// Mock Data (Consider moving to a separate file in production)
+// Mock Data
 const artworks: Artwork[] = [
   { id: 1, serial: "FRAG-01", title: "风化", type: "Mixed Media", desc: "Granite eroded by wind over a millennium.", image: "https://picsum.photos/800/1000?grayscale" },
   { id: 2, serial: "FRAG-02", title: "凝固", type: "Oil", desc: "A moment frozen in amber and dust.", image: "https://picsum.photos/801/1001?grayscale" },
@@ -29,8 +31,27 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('zh');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [transitionEnabled, setTransitionEnabled] = useState(true);
+  const [transitionType, setTransitionType] = useState<'fracture' | 'rain'>('fracture');
+  
+  // Transition Execution State
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [pendingSection, setPendingSection] = useState<SectionId | null>(null);
 
   const t = translations[lang];
+
+  const handleSectionChange = (id: SectionId) => {
+    if (activeSection === id) return;
+    audioService.playClick();
+
+    if (!transitionEnabled) {
+      setActiveSection(id);
+      return;
+    }
+
+    setPendingSection(id);
+    setIsTransitioning(true);
+  };
 
   const handleChat = async () => {
     if (!chatInput.trim() || chatLoading) return;
@@ -63,6 +84,16 @@ const App: React.FC = () => {
     setLang(prev => prev === 'zh' ? 'en' : 'zh');
   };
 
+  const toggleTransition = () => {
+    audioService.playClick();
+    setTransitionEnabled(prev => !prev);
+  };
+
+  const toggleTransitionType = () => {
+    audioService.playClick();
+    setTransitionType(prev => prev === 'fracture' ? 'rain' : 'fracture');
+  };
+
   // Dynamic Styles based on Theme
   const containerClass = theme === 'dark' 
     ? 'bg-stone-900 text-stone-300 shadow-[20px_20px_60px_rgba(0,0,0,0.6),-5px_-5px_20px_rgba(30,30,30,0.5)] border-stone-800' 
@@ -78,18 +109,42 @@ const App: React.FC = () => {
       
       <BladeCursor />
       <ScissorTrail />
+      
+      <PageTransition 
+        isActive={isTransitioning} 
+        type={transitionType}
+        onMidpoint={() => {
+            if (pendingSection) setActiveSection(pendingSection);
+        }}
+        onComplete={() => {
+            setIsTransitioning(false);
+            setPendingSection(null);
+        }}
+      />
 
       {/* Settings Panel (Floating) */}
-      <div className="fixed top-4 right-4 md:right-12 z-50 flex gap-4 font-mono text-[0.6rem] tracking-widest">
-         <button onClick={toggleAudio} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? (audioEnabled ? 'text-red-500' : 'text-stone-600') : (audioEnabled ? 'text-red-800' : 'text-stone-400')}`}>
-            [{t.settings.audio}: {audioEnabled ? 'ON' : 'OFF'}]
-         </button>
-         <button onClick={toggleTheme} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? 'text-stone-400' : 'text-stone-500'}`}>
-            [{t.settings.theme}: {theme === 'dark' ? 'OBSIDIAN' : 'GRANITE'}]
-         </button>
-         <button onClick={toggleLang} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? 'text-stone-400' : 'text-stone-500'}`}>
-            [{t.settings.lang}: {lang.toUpperCase()}]
-         </button>
+      <div className="fixed top-4 right-4 md:right-12 z-50 flex flex-col items-end md:flex-row gap-2 md:gap-4 font-mono text-[0.6rem] tracking-widest select-none">
+         <div className="flex gap-4">
+             <button onClick={toggleAudio} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? (audioEnabled ? 'text-red-500' : 'text-stone-600') : (audioEnabled ? 'text-red-800' : 'text-stone-400')}`}>
+                [{t.settings.audio}: {audioEnabled ? 'ON' : 'OFF'}]
+             </button>
+             <button onClick={toggleTheme} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? 'text-stone-400' : 'text-stone-500'}`}>
+                [{t.settings.theme}: {theme === 'dark' ? 'OBSIDIAN' : 'GRANITE'}]
+             </button>
+             <button onClick={toggleLang} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? 'text-stone-400' : 'text-stone-500'}`}>
+                [{t.settings.lang}: {lang.toUpperCase()}]
+             </button>
+         </div>
+         <div className="flex gap-4">
+             <button onClick={toggleTransition} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? (transitionEnabled ? 'text-red-500' : 'text-stone-600') : (transitionEnabled ? 'text-red-800' : 'text-stone-400')}`}>
+                [{t.settings.transition}: {transitionEnabled ? 'ON' : 'OFF'}]
+             </button>
+             {transitionEnabled && (
+                 <button onClick={toggleTransitionType} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? 'text-stone-400' : 'text-stone-500'}`}>
+                    [{t.settings.effect}: {t.settings.effects[transitionType]}]
+                 </button>
+             )}
+         </div>
       </div>
 
       {/* Main Slab Container */}
@@ -104,7 +159,7 @@ const App: React.FC = () => {
         <div className={`absolute inset-0 pointer-events-none z-10 mix-blend-overlay bg-gradient-to-br ${theme === 'dark' ? 'from-black/60 via-transparent to-black/80' : 'from-white/10 via-transparent to-black/20'}`}></div>
 
         {/* Layout */}
-        <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} lang={lang} theme={theme} />
+        <Sidebar activeSection={activeSection} setActiveSection={handleSectionChange} lang={lang} theme={theme} />
 
         {/* Scrollable Content Area */}
         <main className={`flex-1 h-full overflow-y-auto custom-scrollbar relative z-10 transition-colors duration-700 ${mainBgClass}`}>
