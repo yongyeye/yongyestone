@@ -4,119 +4,162 @@ import ScissorTrail from './components/ScissorTrail';
 import StoneVeins from './components/StoneVeins';
 import Sidebar from './components/Sidebar';
 import ArtworkCard from './components/ArtworkCard';
-import Intro from './components/Intro'; // Import Intro
+import Intro from './components/Intro';
 import { chatWithSlab } from './services/geminiService';
 import { Artwork, ChatMessage, SectionId } from './types';
+import { Language, translations } from './translations';
+import { audioService } from './services/audioService';
 
-// Mock Data
+// Mock Data (Consider moving to a separate file in production)
 const artworks: Artwork[] = [
-  { id: 1, serial: "FRAG-01", title: "风化", type: "混合媒介", desc: "千年花岗岩风蚀研究。", image: "https://picsum.photos/800/1000?grayscale" },
-  { id: 2, serial: "FRAG-02", title: "凝固", type: "板岩油画", desc: "尘埃与琥珀中的定格瞬间。", image: "https://picsum.photos/801/1001?grayscale" },
-  { id: 3, serial: "FRAG-03", title: "裂痕", type: "摄影", desc: "结构崩塌的确切时刻。", image: "https://picsum.photos/802/1002?grayscale" },
-  { id: 4, serial: "FRAG-04", title: "沉积", type: "数字扫描", desc: "被遗忘历史的压缩层。", image: "https://picsum.photos/803/1003?grayscale" },
+  { id: 1, serial: "FRAG-01", title: "风化", type: "Mixed Media", desc: "Granite eroded by wind over a millennium.", image: "https://picsum.photos/800/1000?grayscale" },
+  { id: 2, serial: "FRAG-02", title: "凝固", type: "Oil", desc: "A moment frozen in amber and dust.", image: "https://picsum.photos/801/1001?grayscale" },
+  { id: 3, serial: "FRAG-03", title: "裂痕", type: "Photo", desc: "The exact moment of structural failure.", image: "https://picsum.photos/802/1002?grayscale" },
+  { id: 4, serial: "FRAG-04", title: "沉积", type: "Scan", desc: "Compressed layers of forgotten history.", image: "https://picsum.photos/803/1003?grayscale" },
 ];
 
 const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<SectionId>('gallery');
   const [chatInput, setChatInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([{ role: 'ai', text: '石板正在聆听...' }]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
-  const [introDone, setIntroDone] = useState(false); // State for intro completion
+  const [introDone, setIntroDone] = useState(false);
+  
+  // Settings State
+  const [lang, setLang] = useState<Language>('zh');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [audioEnabled, setAudioEnabled] = useState(false);
+
+  const t = translations[lang];
 
   const handleChat = async () => {
     if (!chatInput.trim() || chatLoading) return;
     
+    audioService.playClick();
     const userQ = chatInput;
     setChatInput("");
     setChatLoading(true);
     setMessages(prev => [...prev, { role: 'user', text: userQ }]);
 
-    const answer = await chatWithSlab(userQ);
+    const answer = await chatWithSlab(userQ, lang);
     setMessages(prev => [...prev, { role: 'ai', text: answer }]);
     setChatLoading(false);
   };
 
+  const toggleAudio = () => {
+    const newState = !audioEnabled;
+    setAudioEnabled(newState);
+    audioService.toggleMute(!newState);
+    audioService.playClick();
+  };
+
+  const toggleTheme = () => {
+    audioService.playClick();
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  const toggleLang = () => {
+    audioService.playClick();
+    setLang(prev => prev === 'zh' ? 'en' : 'zh');
+  };
+
+  // Dynamic Styles based on Theme
+  const containerClass = theme === 'dark' 
+    ? 'bg-stone-900 text-stone-300 shadow-[20px_20px_60px_rgba(0,0,0,0.6),-5px_-5px_20px_rgba(30,30,30,0.5)] border-stone-800' 
+    : 'bg-stone-300 text-stone-800 shadow-[20px_20px_60px_rgba(0,0,0,0.3),-20px_-20px_60px_rgba(255,255,255,0.5)] border-white/20';
+
+  const mainBgClass = theme === 'dark' ? 'bg-stone-950/50' : 'bg-stone-100/5';
+  const headerClass = theme === 'dark' ? 'text-stone-200' : 'text-stone-800';
+  const bigTextClass = theme === 'dark' ? 'text-stone-800/20' : 'text-stone-600/5';
+
   return (
-    <div className="w-full h-screen flex items-center justify-center p-2 md:p-8 lg:p-12 bg-stone-200 overflow-hidden">
-      { !introDone && <Intro onComplete={() => setIntroDone(true)} /> }
+    <div className={`w-full h-screen flex items-center justify-center p-2 md:p-8 lg:p-12 overflow-hidden transition-colors duration-1000 ${theme === 'dark' ? 'bg-stone-950' : 'bg-stone-200'}`}>
+      { !introDone && <Intro onComplete={() => setIntroDone(true)} lang={lang} /> }
       
       <BladeCursor />
       <ScissorTrail />
 
-      {/* Main Slab Container - Added transition for entrance effect */}
+      {/* Settings Panel (Floating) */}
+      <div className="fixed top-4 right-4 md:right-12 z-50 flex gap-4 font-mono text-[0.6rem] tracking-widest">
+         <button onClick={toggleAudio} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? (audioEnabled ? 'text-red-500' : 'text-stone-600') : (audioEnabled ? 'text-red-800' : 'text-stone-400')}`}>
+            [{t.settings.audio}: {audioEnabled ? 'ON' : 'OFF'}]
+         </button>
+         <button onClick={toggleTheme} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? 'text-stone-400' : 'text-stone-500'}`}>
+            [{t.settings.theme}: {theme === 'dark' ? 'OBSIDIAN' : 'GRANITE'}]
+         </button>
+         <button onClick={toggleLang} className={`hover:text-red-600 transition-colors ${theme === 'dark' ? 'text-stone-400' : 'text-stone-500'}`}>
+            [{t.settings.lang}: {lang.toUpperCase()}]
+         </button>
+      </div>
+
+      {/* Main Slab Container */}
       <div 
-        className={`relative w-full max-w-[1600px] h-full md:h-[90vh] stone-texture rounded-sm shadow-[20px_20px_60px_rgba(0,0,0,0.3),-20px_-20px_60px_rgba(255,255,255,0.5)] flex overflow-hidden border border-white/20 rough-edge transition-all duration-[2000ms] ease-out ${
+        className={`relative w-full max-w-[1600px] h-full md:h-[90vh] stone-texture rounded-sm flex overflow-hidden border rough-edge transition-all duration-[1000ms] ease-out ${
           introDone ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
-        }`}
+        } ${containerClass}`}
       >
         
         {/* Background Effects */}
-        <StoneVeins />
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/10 via-transparent to-black/20 z-10 mix-blend-overlay"></div>
+        <StoneVeins theme={theme} />
+        <div className={`absolute inset-0 pointer-events-none z-10 mix-blend-overlay bg-gradient-to-br ${theme === 'dark' ? 'from-black/60 via-transparent to-black/80' : 'from-white/10 via-transparent to-black/20'}`}></div>
 
         {/* Layout */}
-        <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+        <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} lang={lang} theme={theme} />
 
         {/* Scrollable Content Area */}
-        <main className="flex-1 h-full overflow-y-auto custom-scrollbar relative z-10 bg-stone-100/5">
+        <main className={`flex-1 h-full overflow-y-auto custom-scrollbar relative z-10 transition-colors duration-700 ${mainBgClass}`}>
           <div className="min-h-full p-8 md:p-16 pb-32">
             
             {/* Header Section */}
-            <header className="mb-16 border-b border-stone-600/20 pb-8 relative">
-              <h2 className="text-6xl md:text-9xl font-bold text-stone-600/5 absolute -top-6 md:-top-12 -left-4 select-none z-0 engraved-text uppercase">
-                {activeSection}
+            <header className={`mb-16 border-b pb-8 relative transition-colors duration-700 ${theme === 'dark' ? 'border-stone-700/30' : 'border-stone-600/20'}`}>
+              <h2 className={`text-6xl md:text-9xl font-bold absolute -top-6 md:-top-12 -left-4 select-none z-0 engraved-text uppercase transition-colors duration-700 ${bigTextClass}`}>
+                {t.menu[activeSection]}
               </h2>
-              <h2 className="text-3xl md:text-4xl font-serif text-stone-800 relative z-10 engraved-text pl-2">
-                {activeSection === 'gallery' && '遗迹陈列'}
-                {activeSection === 'about' && '挖掘记录'}
-                {activeSection === 'statement' && '石板铭文'}
+              <h2 className={`text-3xl md:text-4xl font-serif relative z-10 engraved-text pl-2 transition-colors duration-700 ${headerClass}`}>
+                {t.menu[activeSection]}
               </h2>
             </header>
 
-            {/* Content Switching */}
             <div className="animate-fade-in">
+              {/* GALLERY */}
               {activeSection === 'gallery' && (
                 <div className="columns-1 md:columns-2 lg:columns-2 gap-12 space-y-12 pr-4">
-                  {artworks.map(work => <ArtworkCard key={work.id} work={work} />)}
+                  {artworks.map(work => <ArtworkCard key={work.id} work={work} lang={lang} theme={theme} />)}
                 </div>
               )}
 
+              {/* ABOUT */}
               {activeSection === 'about' && (
-                <div className="max-w-2xl space-y-8 text-stone-700">
+                <div className={`max-w-2xl space-y-8 ${theme === 'dark' ? 'text-stone-400' : 'text-stone-700'}`}>
                   <p className="leading-loose font-serif text-xl engraved-text">
-                    我们不创造，我们挖掘。这个接口是对记忆的数字考古。
-                    如同困在板岩中的化石，这些作品是张力与释放的凝固瞬间。
+                    {t.about.text}
                   </p>
-                  <div className="p-8 bg-stone-800/5 border border-stone-800/10 rounded-sm shadow-inner">
-                    <h4 className="font-mono text-xs mb-6 text-stone-500 tracking-widest">系统归档</h4>
-                    <ul className="space-y-4 font-mono text-xs text-stone-600">
-                      <li className="flex items-center gap-2">
-                        <span className="text-red-900">{">>>"}</span> 
-                        <span>序列 01: 初始化完成。</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="text-red-900">{">>>"}</span>
-                        <span>矿脉映射已启动。</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="text-red-900">{">>>"}</span>
-                        <span>Gemini-2.5 链接已建立。</span>
-                      </li>
+                  <div className={`p-8 border rounded-sm shadow-inner transition-colors duration-700 ${theme === 'dark' ? 'bg-stone-900/50 border-stone-800' : 'bg-stone-800/5 border-stone-800/10'}`}>
+                    <h4 className="font-mono text-xs mb-6 text-stone-500 tracking-widest">{t.about.logTitle}</h4>
+                    <ul className="space-y-4 font-mono text-xs text-stone-500">
+                      {t.about.logs.map((log, i) => (
+                         <li key={i} className="flex items-center gap-2">
+                           <span className="text-red-800">{">>>"}</span> 
+                           <span>{log}</span>
+                         </li>
+                      ))}
                     </ul>
                   </div>
                 </div>
               )}
 
+              {/* STATEMENT */}
               {activeSection === 'statement' && (
                 <div className="max-w-3xl mx-auto mt-8">
                   <div className="text-center mb-12">
-                    <p className="text-2xl font-serif italic text-stone-600">
-                      "石头不说话，但它记得一切。"
+                    <p className={`text-2xl font-serif italic ${theme === 'dark' ? 'text-stone-500' : 'text-stone-600'}`}>
+                      {t.statement.quote}
                     </p>
                   </div>
                   
-                  {/* Chat Interface */}
-                  <div className="border border-stone-500/20 bg-stone-400/10 p-6 md:p-8 min-h-[400px] flex flex-col rounded-sm shadow-[inset_2px_2px_8px_rgba(0,0,0,0.1)] backdrop-blur-sm">
+                  <div className={`border p-6 md:p-8 min-h-[400px] flex flex-col rounded-sm shadow-[inset_2px_2px_8px_rgba(0,0,0,0.2)] backdrop-blur-sm transition-colors duration-700 ${
+                      theme === 'dark' ? 'border-stone-700/30 bg-stone-900/30' : 'border-stone-500/20 bg-stone-400/10'
+                  }`}>
                     <div className="flex-1 overflow-y-auto space-y-6 mb-6 custom-scrollbar pr-4 max-h-[50vh]">
                       {messages.map((m, i) => (
                         <div 
@@ -127,7 +170,7 @@ const App: React.FC = () => {
                             max-w-[80%] p-4 rounded-sm text-sm font-serif leading-relaxed shadow-sm
                             ${m.role === 'user' 
                               ? 'bg-stone-800 text-stone-200 rounded-br-none' 
-                              : 'bg-stone-200/60 text-stone-800 rounded-bl-none border border-stone-300'}
+                              : (theme === 'dark' ? 'bg-stone-800/60 text-stone-300 border-stone-700' : 'bg-stone-200/60 text-stone-800 border-stone-300') + ' rounded-bl-none border'}
                           `}>
                             {m.text}
                           </div>
@@ -135,24 +178,26 @@ const App: React.FC = () => {
                       ))}
                       {chatLoading && (
                         <div className="text-xs text-red-800 font-mono animate-pulse pl-2">
-                          回响中...
+                          {t.statement.loading}
                         </div>
                       )}
                     </div>
                     
-                    <div className="flex gap-4 border-t border-stone-500/20 pt-6">
+                    <div className={`flex gap-4 border-t pt-6 ${theme === 'dark' ? 'border-stone-700/30' : 'border-stone-500/20'}`}>
                       <input 
                         value={chatInput} 
                         onChange={e => setChatInput(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleChat()}
-                        className="flex-1 bg-transparent border-b border-stone-400/30 py-2 px-2 outline-none text-base font-serif text-stone-800 placeholder-stone-400/50 focus:border-red-900/50 transition-colors"
-                        placeholder="将你的疑问刻入石板..."
+                        className={`flex-1 bg-transparent border-b py-2 px-2 outline-none text-base font-serif placeholder-stone-500/50 focus:border-red-900/50 transition-colors ${
+                            theme === 'dark' ? 'border-stone-700 text-stone-300' : 'border-stone-400/30 text-stone-800'
+                        }`}
+                        placeholder={t.statement.placeholder}
                       />
                       <button 
                         onClick={handleChat} 
                         className="px-6 py-2 bg-stone-800 text-stone-200 text-xs font-mono tracking-widest hover:bg-red-900 transition-colors shadow-md"
                       >
-                        刻录
+                        {t.statement.send}
                       </button>
                     </div>
                   </div>

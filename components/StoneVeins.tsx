@@ -1,8 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 
-const StoneVeins: React.FC = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+interface Props {
+  theme: 'light' | 'dark';
+}
 
+const StoneVeins: React.FC<Props> = ({ theme }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // Re-trigger animation when theme changes
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -41,14 +46,12 @@ const StoneVeins: React.FC = () => {
           this.x += Math.cos(this.angle) * this.speed;
           this.y += Math.sin(this.angle) * this.speed;
           this.life--;
-          // Meander slightly
           this.angle += (Math.random() - 0.5) * 0.3;
 
-          // Branch out probability
           if (Math.random() < 0.015 && this.depth > 1) {
             branches.push(new Branch(this.x, this.y, this.angle + 0.6, this.depth - 1));
             branches.push(new Branch(this.x, this.y, this.angle - 0.6, this.depth - 1));
-            this.finished = true; // Stop this branch when it splits for visual clarity
+            this.finished = true;
           }
         } else {
           this.finished = true;
@@ -58,8 +61,12 @@ const StoneVeins: React.FC = () => {
       draw(context: CanvasRenderingContext2D) {
         context.beginPath();
         context.arc(this.x, this.y, this.thickness, 0, Math.PI * 2);
-        // Dark reddish-brown vein color
-        context.fillStyle = `rgba(60, 20, 20, 0.1)`;
+        // Adjust vein color based on theme
+        if (theme === 'dark') {
+             context.fillStyle = `rgba(200, 200, 200, 0.08)`; // Light veins on dark stone
+        } else {
+             context.fillStyle = `rgba(60, 20, 20, 0.1)`; // Dark veins on light stone
+        }
         context.fill();
       }
     }
@@ -67,7 +74,6 @@ const StoneVeins: React.FC = () => {
     const init = () => {
       if (!parent) return;
       branches = [];
-      // Start from random corners or edges
       branches.push(new Branch(0, 0, Math.PI / 4, 9));
       branches.push(new Branch(parent.offsetWidth, parent.offsetHeight, -3 * Math.PI / 4, 9));
       branches.push(new Branch(parent.offsetWidth, 0, 3 * Math.PI / 4, 8));
@@ -93,7 +99,7 @@ const StoneVeins: React.FC = () => {
     const ro = new ResizeObserver(resize);
     ro.observe(parent);
 
-    // Initial start
+    // Slight delay to ensure layout is ready
     setTimeout(() => {
         resize();
         animate();
@@ -103,12 +109,12 @@ const StoneVeins: React.FC = () => {
       ro.disconnect();
       cancelAnimationFrame(rafId);
     };
-  }, []);
+  }, [theme]); // Re-run when theme changes
 
   return (
     <canvas 
       ref={canvasRef} 
-      className="absolute inset-0 w-full h-full pointer-events-none mix-blend-multiply opacity-60 z-0" 
+      className="absolute inset-0 w-full h-full pointer-events-none mix-blend-overlay z-0" 
     />
   );
 };

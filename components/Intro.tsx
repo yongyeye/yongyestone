@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from 'react';
+import { Language, translations } from '../translations';
 
 interface IntroProps {
   onComplete: () => void;
+  lang: Language;
 }
 
-const Intro: React.FC<IntroProps> = ({ onComplete }) => {
+const Intro: React.FC<IntroProps> = ({ onComplete, lang }) => {
   const [phase, setPhase] = useState(0); // 0: Idle, 1: Text, 2: Line Draw, 3: Split, 4: Done
+  const t = translations[lang].intro;
 
   useEffect(() => {
-    // Sequence timeline
     const timeline = [
-      { t: 500, action: () => setPhase(1) },  // Text appears
-      { t: 2000, action: () => setPhase(2) }, // Red line draws down
-      { t: 2800, action: () => setPhase(3) }, // Stone splits
-      { t: 4500, action: () => {              // Cleanup
+      { t: 500, action: () => setPhase(1) },
+      { t: 2000, action: () => setPhase(2) },
+      { t: 2800, action: () => setPhase(3) },
+      { t: 4500, action: () => {
           setPhase(4);
           onComplete();
         } 
@@ -35,10 +37,9 @@ const Intro: React.FC<IntroProps> = ({ onComplete }) => {
           phase >= 3 ? '-translate-x-full' : 'translate-x-0'
         }`}
       >
-        {/* Left Text content */}
         <div className={`absolute right-0 top-1/2 -translate-y-1/2 pr-8 text-right transition-opacity duration-500 ${phase === 1 ? 'opacity-100' : 'opacity-0'}`}>
           <div className="font-mono text-[0.6rem] text-stone-500 tracking-[0.2em] mb-2">SYS.894</div>
-          <div className="font-serif text-2xl text-stone-200 tracking-widest engraved-text">系统初始化</div>
+          <div className="font-serif text-2xl text-stone-200 tracking-widest engraved-text">{t.sys}</div>
         </div>
       </div>
 
@@ -48,23 +49,19 @@ const Intro: React.FC<IntroProps> = ({ onComplete }) => {
           phase >= 3 ? 'translate-x-full' : 'translate-x-0'
         }`}
       >
-        {/* Right Text content */}
         <div className={`absolute left-0 top-1/2 -translate-y-1/2 pl-8 text-left transition-opacity duration-500 ${phase === 1 ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="font-mono text-[0.6rem] text-stone-500 tracking-[0.2em] mb-2">深度: 0.0m</div>
-          <div className="font-serif text-2xl text-stone-200 tracking-widest engraved-text">岩石核心</div>
+          <div className="font-mono text-[0.6rem] text-stone-500 tracking-[0.2em] mb-2">{t.depth}: 0.0m</div>
+          <div className="font-serif text-2xl text-stone-200 tracking-widest engraved-text">{t.core}</div>
         </div>
       </div>
 
-      {/* Central Fissure Effect */}
+      {/* Central Fissure */}
       <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
-        {/* The Red Line */}
         <div 
           className={`w-[2px] bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.8)] transition-all duration-[800ms] ease-in-out ${
             phase === 2 ? 'h-full opacity-100' : phase > 2 ? 'h-full opacity-0' : 'h-0 opacity-0'
           }`}
         />
-        
-        {/* The Flash */}
         <div 
           className={`absolute inset-0 bg-white transition-opacity duration-700 ${
             phase === 3 ? 'opacity-20' : 'opacity-0'
@@ -72,7 +69,6 @@ const Intro: React.FC<IntroProps> = ({ onComplete }) => {
         />
       </div>
 
-      {/* Dark Overlay for depth (sits behind panels to hide the app until split) */}
       <div className={`absolute inset-0 bg-black transition-opacity duration-1000 z-10 ${phase >= 3 ? 'opacity-0' : 'opacity-100'}`} />
     </div>
   );
