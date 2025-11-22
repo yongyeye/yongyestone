@@ -347,7 +347,7 @@ const App: React.FC = () => {
                                         ))}
                                         {damage.blood > 0 && <li className="text-red-800">!!! ORGANIC CONTAMINATION DETECTED</li>}
                                         {damage.fracture > 0 && <li className="text-red-800">!!! STRUCTURAL INTEGRITY COMPROMISED</li>}
-                                        {repairedFractureCount > 0 && <li className="text-yellow-600">>>> KINTSUGI REPAIR PROTOCOL APPLIED</li>}
+                                        {repairedFractureCount > 0 && <li className="text-yellow-600">{">>>"} KINTSUGI REPAIR PROTOCOL APPLIED</li>}
                                     </ul>
                                 </div>
                             </div>
