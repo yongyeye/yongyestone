@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import BladeCursor from './components/BladeCursor';
 import ScissorTrail from './components/ScissorTrail';
 import StoneVeins from './components/StoneVeins';
 import Sidebar from './components/Sidebar';
 import ArtworkCard from './components/ArtworkCard';
+import Intro from './components/Intro'; // Import Intro
 import { chatWithSlab } from './services/geminiService';
 import { Artwork, ChatMessage, SectionId } from './types';
 
@@ -20,6 +22,7 @@ const App: React.FC = () => {
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([{ role: 'ai', text: 'The stone is listening...' }]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [introDone, setIntroDone] = useState(false); // State for intro completion
 
   const handleChat = async () => {
     if (!chatInput.trim() || chatLoading) return;
@@ -36,11 +39,17 @@ const App: React.FC = () => {
 
   return (
     <div className="w-full h-screen flex items-center justify-center p-2 md:p-8 lg:p-12 bg-stone-200 overflow-hidden">
+      <Intro onComplete={() => setIntroDone(true)} />
+      
       <BladeCursor />
       <ScissorTrail />
 
-      {/* Main Slab Container */}
-      <div className="relative w-full max-w-[1600px] h-full md:h-[90vh] stone-texture rounded-sm shadow-[20px_20px_60px_rgba(0,0,0,0.3),-20px_-20px_60px_rgba(255,255,255,0.5)] flex overflow-hidden border border-white/20 rough-edge">
+      {/* Main Slab Container - Added transition for entrance effect */}
+      <div 
+        className={`relative w-full max-w-[1600px] h-full md:h-[90vh] stone-texture rounded-sm shadow-[20px_20px_60px_rgba(0,0,0,0.3),-20px_-20px_60px_rgba(255,255,255,0.5)] flex overflow-hidden border border-white/20 rough-edge transition-all duration-[2000ms] ease-out ${
+          introDone ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
+        }`}
+      >
         
         {/* Background Effects */}
         <StoneVeins />
