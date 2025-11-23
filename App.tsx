@@ -16,7 +16,7 @@ import { audioService } from './services/audioService';
 
 // Mock Data
 const artworks: Artwork[] = [
-  { id: 1, serial: "FRAG-01", title: "风化", type: "Mixed Media", desc: "Granite eroded by wind over a millennium.", image: "imageart/IMG_2978(20240325-234252).JPG" },
+  { id: 1, serial: "FRAG-01", title: "风化", type: "Mixed Media", desc: "Granite eroded by wind over a millennium.", image: "imageart/wind.jpg/800/1000?grayscale" },
   { id: 2, serial: "FRAG-02", title: "凝固", type: "Oil", desc: "A moment frozen in amber and dust.", image: "https://picsum.photos/801/1001?grayscale" },
   { id: 3, serial: "FRAG-03", title: "裂痕", type: "Photo", desc: "The exact moment of structural failure.", image: "https://picsum.photos/802/1002?grayscale" },
   { id: 4, serial: "FRAG-04", title: "沉积", type: "Scan", desc: "Compressed layers of forgotten history.", image: "https://picsum.photos/803/1003?grayscale" },
